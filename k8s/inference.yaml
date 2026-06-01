@@ -1,0 +1,10 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: churn-predictor
+  namespace: churn-model
+spec:
+  predictor:
+    serviceAccountName: sa-blob-access
+    sklearn:
+      storageUri: https://mlopsss.blob.core.windows.net/dvcstore/churn_model.pkl

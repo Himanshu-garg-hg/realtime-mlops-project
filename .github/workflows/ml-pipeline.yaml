@@ -1,0 +1,56 @@
+name: ml-pipeline
+
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+
+permissions:
+  id-token: write
+
+jobs:
+  Continious-Training:
+    name: Continious-Training
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10.9'
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip wheel setuptools
+          pip install -r requirements.txt
+        
+      - name: Generate synthetic data
+        run: |
+          source .venv/bin/activate
+          python generate_data.py
+
+      - name: train model
+        run: |
+          source .venv/bin/activate
+          python train.py
+
+      - name: az login using federated credentials
+        uses: azure/login@v1
+        with:
+          client-id: "ed64b1f2-b223-4b4c-856b-9a70c6886972"
+          tenant-id: "766f0785-716a-4d22-944b-ee4644c00169"
+          subscription-id: "1ea57363-0d6f-418e-832f-05b50dcc8c90"
+
+
+      - name: publish model to blob storage
+        run: |
+          source .venv/bin/activate
+          az storage blob upload --account-name mlopsss --container-name dvcstore --name churn_model.pkl --file models/churn_model.pkl
+      
